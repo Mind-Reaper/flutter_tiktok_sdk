@@ -40,4 +40,10 @@ void main() {
     expect(result.authCode, 'authCode');
     expect(result.grantedPermissions, TikTokPermissionType.values.toSet());
   });
+
+  test('shareGreenScreen', () async {
+    final result = await TikTokSDK.instance.shareGreenScreen("455959459493");
+    expect(result, true);
+    expect(result, false);
+  });
 }

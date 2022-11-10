@@ -62,6 +62,7 @@ public class SwiftFlutterTiktokSdkPlugin: NSObject, FlutterPlugin, PHPhotoLibrar
         var result: Bool = false
         let isInstalled = TikTokOpenSDKApplicationDelegate.sharedInstance().isAppInstalled()
         
+    
         if(isInstalled) {
             
             var shareReq = TikTokOpenSDKShareRequest()
@@ -77,7 +78,10 @@ public class SwiftFlutterTiktokSdkPlugin: NSObject, FlutterPlugin, PHPhotoLibrar
                 print(resp)
                 
                 print(resp.shareState)
+                print(resp.shareState.rawValue)
+                print(resp.errCode.rawValue)
                 print(resp.errString)
+                print(resp.state)
                 if resp.isSucceed {
                     result = true
                 } else {
