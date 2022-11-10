@@ -1,8 +1,13 @@
 import Flutter
 import UIKit
 import TikTokOpenSDK
+import Photos
 
-public class SwiftFlutterTiktokSdkPlugin: NSObject, FlutterPlugin {
+public class SwiftFlutterTiktokSdkPlugin: NSObject, FlutterPlugin, PHPhotoLibraryChangeObserver {
+    public func photoLibraryDidChange(_ changeInstance: PHChange) {
+        print(changeInstance)
+    }
+    
   public static func register(with registrar: FlutterPluginRegistrar) {
     let channel = FlutterMethodChannel(name: "com.k9i/flutter_tiktok_sdk", binaryMessenger: registrar.messenger())
     let instance = SwiftFlutterTiktokSdkPlugin()
@@ -16,6 +21,8 @@ public class SwiftFlutterTiktokSdkPlugin: NSObject, FlutterPlugin {
       result(nil)
     case "login":
       login(call, result: result)
+    case "shareGreenScreen":
+        shareGreenScreenAPI(call, result: result)
     default:
       result(FlutterMethodNotImplemented)
       return
@@ -28,6 +35,88 @@ public class SwiftFlutterTiktokSdkPlugin: NSObject, FlutterPlugin {
       }
       return false
   }
+    
+    
+    func shareGreenScreenAPI(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        guard let args = call.arguments as? String else {
+          result(FlutterError.nilArgument)
+          return
+        }
+        
+        guard let rootViewController = UIApplication.shared.keyWindow?.rootViewController else {
+          result(nil)
+          return
+        }
+        
+       
+            if let asset = self.convertBase64StringToAsset(imageBase64String: args) {
+                let success = self.shareGreenScreen(isVideo: false, asset: asset)
+                result(success)
+                return
+        }
+    
+    }
+    
+    private func shareGreenScreen(isVideo: Bool, asset: String) -> Bool {
+        
+        var result: Bool = false
+        let isInstalled = TikTokOpenSDKApplicationDelegate.sharedInstance().isAppInstalled()
+        
+        if(isInstalled) {
+            
+            var shareReq = TikTokOpenSDKShareRequest()
+            shareReq.shareFormat = .greenScreen
+            shareReq.mediaType = isVideo ? .video : .image
+            
+            var mediaLocalIdentifiers: [String] = []
+            mediaLocalIdentifiers.append(asset)
+            shareReq.localIdentifiers = mediaLocalIdentifiers
+            //            shareReq.hashtag = "ERSocialShareManager"
+            
+            shareReq.send(completionBlock: { resp -> Void in
+                print(resp)
+                
+                print(resp.shareState)
+                print(resp.errString)
+                if resp.isSucceed {
+                    result = true
+                } else {
+                    result = false
+                }
+            })
+            return result
+        } else {
+            return false
+        }
+    }
+    
+    func convertBase64StringToAsset (imageBase64String:String) -> String? {
+        //        var resultAsset: PHAsset?
+        var localID: String?
+        let imageData = Data(base64Encoded: imageBase64String)
+        if let image = UIImage(data: imageData!) {
+            do {
+                PHPhotoLibrary.shared().register(self)
+                if #available(iOS 14, *) {
+                    PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
+                        print(status.self)
+                    }
+                }
+                try PHPhotoLibrary.shared().performChangesAndWait {
+                    let imgReq = PHAssetChangeRequest.creationRequestForAsset(from: image)
+                    localID =  imgReq.placeholderForCreatedAsset?.localIdentifier
+                }
+                //                let asset = PHAsset.fetchAssets(withLocalIdentifiers: [localID!], options: .none)
+                //
+                //                resultAsset = asset.firstObject
+                return localID
+            } catch {
+                print(error)
+                return localID
+            }
+        }
+        return localID
+    }
   
   func login(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any] else {

@@ -31,6 +31,29 @@ class TikTokSDK {
   /// login TikTok
   ///
   /// [permissionType] You must apply for permissions at the time of app registration.
+  /// 
+  /// 
+  /// 
+  /// 
+  
+  Future<bool> shareGreenScreen(String base64String) async  {
+    try {
+      final result = await _channel.invokeMethod<bool>('shareGreenScreen', base64String);
+      if(result != null) {
+        return result;
+      } else {
+        return false;
+      }
+    }  on PlatformException catch (e) {
+      print(e);
+      return false;
+    } catch (e) {
+      print(e);
+      return false;
+    }
+  }
+  
+  
   Future<TikTokLoginResult> login({
     required Set<TikTokPermissionType> permissions,
     String? state,
